@@ -1,6 +1,6 @@
 def static_report_generator(data):
     report = f"""
-Number of Import Statements: {len(data['imports'])}
+Number of Import Statements: {data['number_of_import_statements']}
 Imports: {', '.join(data['imports'])}
 Distributions: {', '.join(data['distributions'])}
 Samplers: {data['samplers']}

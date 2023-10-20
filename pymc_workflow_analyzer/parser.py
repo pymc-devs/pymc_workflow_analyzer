@@ -6,6 +6,7 @@ class StaticParser(ast.NodeVisitor):
         self.imported_names = {}  # Maps imported names to their original module (e.g., {"Normal": "pymc.distributions"})
         self.pymc_alias = None
         self.report_data = {
+            "number_of_import_statements":0,
             "imports": [],
             "distributions": [],
             "samplers": [],
@@ -14,6 +15,7 @@ class StaticParser(ast.NodeVisitor):
     def visit_Import(self, node):
         for alias in node.names:
             name = alias.name
+            self.report_data["number_of_import_statements"] += 1
             self.report_data["imports"].append(name)  # Storing the imported library name
             if 'pymc' in name:
                 self.pymc_alias = alias.asname or name
@@ -21,6 +23,7 @@ class StaticParser(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node):
         module_name = node.module
+        self.report_data["number_of_import_statements"] += 1
         self.report_data["imports"].append(module_name)  # Storing the base module name of the import
         if module_name and 'pymc' in module_name:
             for alias in node.names:

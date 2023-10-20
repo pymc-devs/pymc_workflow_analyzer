@@ -5,6 +5,7 @@ from pymc_workflow_analyzer.report import static_report_generator, save_report
 def test_analyze_script():
     script_path = 'sample_model.py'
     expected_result = {
+        'number_of_import_statements': 6,
         'imports': ['arviz', 'matplotlib.pyplot', 'numpy', 'pandas', 'pymc', 'xarray'], 
         'distributions': ['HalfCauchy', 'Normal'],
         'samplers': [{'name': 'sample', 'args': ['Constant(value=3000)'], 'keywords': []}]
