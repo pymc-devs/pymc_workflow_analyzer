@@ -1,4 +1,5 @@
 import ast
+from pymc.distributions import __all__ as pymc_distributions
 
 class StaticParser(ast.NodeVisitor):
     def __init__(self):
@@ -7,11 +8,6 @@ class StaticParser(ast.NodeVisitor):
             "distributions": [],
             "samplers": [],
         }
-        # A list of known PyMC distributions.
-        self.known_distributions = [
-            "HalfCauchy", "Normal", "Uniform", "Bernoulli",
-            # TODO: Add other known distributions here
-        ]
 
     def visit_Import(self, node):
         for alias in node.names:
@@ -32,7 +28,7 @@ class StaticParser(ast.NodeVisitor):
             function_name = node.func.id
 
         # Check if it's a PyMC distribution
-        if function_name in self.known_distributions:
+        if function_name in pymc_distributions:
             if function_name not in self.report_data["distributions"]:
                 self.report_data["distributions"].append(function_name)
 
