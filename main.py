@@ -1,12 +1,9 @@
 import argparse
-import sys
-from typing import Any, Dict, List
 
 from pymc_workflow_analyzer.analyzer import static_analyzer
 from pymc_workflow_analyzer.report import generate_static_report, save_report
 
-
-def main() -> None:
+def main():
     """
     Analyze a PyMC Workflow.
 
@@ -17,8 +14,8 @@ def main() -> None:
     parser.add_argument("--output", help="Path to the file to save the report to")
     args = parser.parse_args()
 
-    analysis_data: Dict[str, Any] = static_analyzer(args.filepath)
-    report_content: str = generate_static_report(analysis_data)
+    analysis_data = static_analyzer(args.filepath)
+    report_content = generate_static_report(analysis_data)
 
     print(report_content)
     if args.output:

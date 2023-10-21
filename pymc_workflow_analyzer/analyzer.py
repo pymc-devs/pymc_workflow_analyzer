@@ -1,9 +1,8 @@
 import ast
-from typing import List, Dict, Any
 from .parser import StaticParser
 
 
-def static_analyzer(file_path: str) -> Dict[str, List[Dict[str, Any]]]:
+def static_analyzer(file_path,):
     """
     Analyze a Python file statically.
 

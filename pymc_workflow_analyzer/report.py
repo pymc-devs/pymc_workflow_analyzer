@@ -1,8 +1,7 @@
 import json
-from typing import Any, Dict, List
+import sys
 
-
-def format_list(key: str, value: List[Dict[str, Any]]) -> str:
+def format_list(key, value):
     """
     Format a list of dictionaries into a string.
 
@@ -23,7 +22,7 @@ def format_list(key: str, value: List[Dict[str, Any]]) -> str:
     return formatted
 
 
-def format_json(data: Dict[str, Any]) -> str:
+def format_json(data):
     """
     Format a dictionary into a JSON string with specific formatting rules.
 
@@ -47,7 +46,7 @@ def format_json(data: Dict[str, Any]) -> str:
     return formatted_json
 
 
-def generate_static_report(analysis_data: Dict[str, Any]) -> str:
+def generate_static_report(analysis_data):
     """
     Generate a static report from analysis data.
 
@@ -63,7 +62,7 @@ def generate_static_report(analysis_data: Dict[str, Any]) -> str:
     return format_json(analysis_data)
 
 
-def save_report(report_content: str, filepath: str = "report.txt") -> None:
+def save_report(report_content, filepath="report.txt"):
     """
     Save report content to a file.
 
