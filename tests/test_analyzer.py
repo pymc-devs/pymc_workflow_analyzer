@@ -15,7 +15,7 @@ def test_analyze_script():
         ],
         "samplers": [{"name": "sample", "args": [3000], "kwargs": []}],
         "math": [],
-        "arviz": []
+        "arviz": [{"name": "plot_trace", "args": ["idata"], "kwargs": ["figsize"]}]
     }
     analysis_report = static_analyzer(script_path)
     assert analysis_report == expected_repost

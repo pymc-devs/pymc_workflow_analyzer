@@ -1,10 +1,13 @@
 import ast
 
+#TODO: fix these to include all functions name
 from pymc.distributions import __all__ as pymc_distributions
 from pymc.math import __all__ as pymc_math
 from pymc.model.core import __all__ as core_models
 from pymc.model.transform.conditioning import __all__ as conditioning_models
 from pymc.model.fgraph import __all__ as fgraph_models
+
+from arviz.plots import __all__ as arviz_plots
 
 pymc_models = list(core_models) + list(conditioning_models) + list(fgraph_models)
 
@@ -22,7 +25,7 @@ class StaticParser(ast.NodeVisitor):
     """
     def __init__(self):
         self.imported_names = {}  # Maps imported names to their original module (e.g., {"Normal": "pymc"})
-        self.pymc_alias = []
+        self.alias_name = []
         self.report = {
             "number_of_import_statements": 0,
             "imports": [],
@@ -43,8 +46,9 @@ class StaticParser(ast.NodeVisitor):
             name = alias.name
             self.report["number_of_import_statements"] += 1
             self.report["imports"].append(name)  # Storing the imported library name
-            if 'pymc' in name:
-                self.pymc_alias.append(alias.asname or name)
+            if 'pymc' in name or 'arviz' in name:
+                self.alias_name.append(alias.asname or name)
+                
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node):
@@ -56,7 +60,7 @@ class StaticParser(ast.NodeVisitor):
         module_name = node.module
         self.report["number_of_import_statements"] += 1
         self.report["imports"].append(module_name)  # Storing the base module name of the import
-        if module_name and 'pymc' in module_name:
+        if module_name and ('pymc' in module_name or 'arviz' in module_name):
             for alias in node.names:
                 imported_as = alias.asname or alias.name
                 self.imported_names[imported_as] = module_name
@@ -87,12 +91,12 @@ class StaticParser(ast.NodeVisitor):
         # Extracting the function name
         if isinstance(node.func, ast.Attribute):
             if isinstance(node.func.value, ast.Name):
-                if node.func.value.id in self.pymc_alias:
+                if node.func.value.id in self.alias_name:
                     function_name = node.func.attr
         elif isinstance(node.func, ast.Name):
             function_id = node.func.id
             if function_id in self.imported_names:
-                if 'pymc' in self.imported_names[function_id]:
+                if 'pymc' in self.imported_names[function_id] or 'arviz' in self.imported_names[function_id]:
                     function_name = function_id  # It's a PyMC function
         
         if function_name:
@@ -108,6 +112,8 @@ class StaticParser(ast.NodeVisitor):
                 self.report["samplers"].append(function_info)
             elif function_name in pymc_math:
                 self.report["math"].append(function_info)
+            elif function_name in arviz_plots:
+                self.report["arviz"].append(function_info)
 
         # continue the visit to other nodes in the syntax tree
         self.generic_visit(node)
