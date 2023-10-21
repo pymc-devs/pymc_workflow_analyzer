@@ -1,70 +1,122 @@
 import ast
+from typing import Dict, Any, List, Union
+
 from pymc.distributions import __all__ as pymc_distributions
+from pymc.math import __all__ as pymc_math
+from pymc.model.core import __all__ as core_models
+from pymc.model.transform.conditioning import __all__ as conditioning_models
+from pymc.model.fgraph import __all__ as fgraph_models
+
+pymc_models: List[str] = list(core_models) + list(conditioning_models) + list(fgraph_models)
+
+pymc_samplers: List[str] = [
+    "sample", "sample_prior_predictive", "sample_posterior_predictive", "sample_posterior_predictive_w",
+    "sample_blackjax_nuts", "sample_numpyro_nuts", "init_nuts", "draw", "NUTS", "HamiltonianMC", 
+    "BinaryGibbsMetropolis", "BinaryMetropolis", "CategoricalGibbsMetropolis", "CauchyProposal", 
+    "DEMetropolis", "DEMetropolisZ", "LaplaceProposal", "Metropolis", "MultivariateNormalProposal", 
+    "NormalProposal", "PoissonProposal", "UniformProposal", "CompoundStep", "Slice",
+]
 
 class StaticParser(ast.NodeVisitor):
+    """
+    A class to parse a Python script and extract information about PyMC usage.
+    """
     def __init__(self):
-        self.imported_names = {}  # Maps imported names to their original module (e.g., {"Normal": "pymc.distributions"})
-        self.pymc_alias = None
-        self.report_data = {
-            "number_of_import_statements":0,
+        self.imported_names: Dict[str, str] = {}  # Maps imported names to their original module (e.g., {"Normal": "pymc"})
+        self.pymc_alias: List[str] = []
+        self.report: Dict[str, Union[int, List[Dict[str, Union[str, List[Union[str, int]]]]]]] = {
+            "number_of_import_statements": 0,
             "imports": [],
+            "model": [],
             "distributions": [],
             "samplers": [],
+            "math": [],
+            "arviz": [],
         }
 
-    def visit_Import(self, node):
+    def visit_Import(self, node: ast.Import) -> None:
+        """
+        Visit an Import node and extract information about the imported library.
+
+        :param node: The Import node to visit.
+        """
         for alias in node.names:
             name = alias.name
-            self.report_data["number_of_import_statements"] += 1
-            self.report_data["imports"].append(name)  # Storing the imported library name
+            self.report["number_of_import_statements"] += 1
+            self.report["imports"].append(name)  # Storing the imported library name
             if 'pymc' in name:
-                self.pymc_alias = alias.asname or name
+                self.pymc_alias.append(alias.asname or name)
         self.generic_visit(node)
 
-    def visit_ImportFrom(self, node):
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        """
+        Visit an ImportFrom node and extract information about the imported library.
+
+        :param node: The ImportFrom node to visit.
+        """
         module_name = node.module
-        self.report_data["number_of_import_statements"] += 1
-        self.report_data["imports"].append(module_name)  # Storing the base module name of the import
+        self.report["number_of_import_statements"] += 1
+        self.report["imports"].append(module_name)  # Storing the base module name of the import
         if module_name and 'pymc' in module_name:
             for alias in node.names:
                 imported_as = alias.asname or alias.name
                 self.imported_names[imported_as] = module_name
         self.generic_visit(node)
+        
+    def get_arg_value(self, arg: Union[ast.Constant, ast.Name, ast.Call]) -> Union[str, int]:
+        """
+        Get the value of an argument.
 
-    def visit_Call(self, node):
+        :param arg: The argument to get the value of.
+        :return: The value of the argument.
+        """
+        if isinstance(arg, ast.Constant):
+            return arg.value
+        elif isinstance(arg, ast.Name):
+            return arg.id
+        else:
+            return ast.dump(arg)
+
+    def visit_Call(self, node: ast.Call) -> None:
+        """
+        Visit a Call node and extract information about the PyMC function being called.
+
+        :param node: The Call node to visit.
+        """
         function_name = None
 
         # Extracting the function name
         if isinstance(node.func, ast.Attribute):
             if isinstance(node.func.value, ast.Name):
-                if node.func.value.id == self.pymc_alias:
+                if node.func.value.id in self.pymc_alias:
                     function_name = node.func.attr
         elif isinstance(node.func, ast.Name):
-            function_name = node.func.id
-            if function_name in self.imported_names:
-                if 'pymc' in self.imported_names[function_name]:
-                    function_name = node.func.id  # It's a PyMC function
-
+            function_id = node.func.id
+            if function_id in self.imported_names:
+                if 'pymc' in self.imported_names[function_id]:
+                    function_name = function_id  # It's a PyMC function
+        
         if function_name:
-            # Check if it's a PyMC distribution
-            if function_name in pymc_distributions and function_name not in self.report_data["distributions"]:
-                self.report_data["distributions"].append(function_name)
-                
-            # If it's a PyMC sampling function, we handle it separately
-            elif function_name in ["sample"]:
-                sampler_info = {"name": function_name, "args": [], "keywords": []}
-                
-                # Extracting positional arguments
-                for arg in node.args:
-                    sampler_info["args"].append(ast.dump(arg))
-                
-                # Extracting keyword arguments
-                for kw in node.keywords:
-                    sampler_info["keywords"].append((kw.arg, ast.dump(kw.value)))
-                self.report_data["samplers"].append(sampler_info)
+            args = [self.get_arg_value(arg) for arg in node.args]
+            kwargs = [keyword.arg for keyword in node.keywords]
+            function_info = {"name": function_name, "args": args, "kwargs": kwargs}
+            
+            if function_name in pymc_models:
+                self.report["model"].append(function_info)
+            elif function_name in pymc_distributions:
+                self.report["distributions"].append(function_info)
+            elif function_name in pymc_samplers:
+                self.report["samplers"].append(function_info)
+            elif function_name in pymc_math:
+                self.report["math"].append(function_info)
 
         # continue the visit to other nodes in the syntax tree
         self.generic_visit(node)
 
-    def report(self):
-        return self.report_data
+    def get_report(self) -> Dict[str, Union[int, List[Dict[str, Union[str, List[Union[str, int]]]]]]]:
+        """
+        Get the report generated by the parser.
+
+        :return: The report generated by the parser.
+        """
+        return self.report
