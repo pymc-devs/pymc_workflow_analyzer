@@ -1,15 +1,21 @@
 import pytest
-from pymc_workflow_analyzer.analyzer import static_analyze
-from pymc_workflow_analyzer.report import static_report_generator, save_report
+from pymc_workflow_analyzer.analyzer import static_analyzer
 
 def test_analyze_script():
     script_path = 'sample_model.py'
-    expected_result = {
-        'number_of_import_statements': 6,
-        'imports': ['arviz', 'matplotlib.pyplot', 'numpy', 'pandas', 'pymc', 'xarray'], 
-        'distributions': ['HalfCauchy', 'Normal'],
-        'samplers': [{'name': 'sample', 'args': ['Constant(value=3000)'], 'keywords': []}]
+    expected_repost = {
+        "number_of_import_statements": 6,
+        "imports": ["arviz", "matplotlib.pyplot", "numpy", "pandas", "pymc", "xarray"],
+        "model": [{"name": "Model", "args": [], "kwargs": []}],
+        "distributions": [
+                {"name": "HalfCauchy", "args": ["sigma"], "kwargs": ["beta"]},
+                {"name": "Normal", "args": ["Intercept", 0], "kwargs": ["sigma"]},
+                {"name": "Normal", "args": ["slope", 0], "kwargs": ["sigma"]},
+                {"name": "Normal", "args": ["y"], "kwargs": ["mu", "sigma", "observed"]}
+        ],
+        "samplers": [{"name": "sample", "args": [3000], "kwargs": []}],
+        "math": [],
+        "arviz": []
     }
-    
-    result = static_analyze(script_path)
-    assert result == expected_result
+    analysis_report = static_analyzer(script_path)
+    assert analysis_report == expected_repost
