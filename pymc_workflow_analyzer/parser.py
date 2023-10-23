@@ -82,20 +82,6 @@ class StaticParser(ast.NodeVisitor):
                 full_name = f"{module_name}.{name}" if module_name else name
                 self.imported_names[asname] = full_name
         self.generic_visit(node)
-        
-    def get_arg_value(self, arg):
-        """
-        Get the value of an argument.
-
-        :param arg: The argument to get the value of.
-        :return: The value of the argument.
-        """
-        if isinstance(arg, ast.Constant):
-            return arg.value
-        elif isinstance(arg, ast.Name):
-            return arg.id
-        else:
-            return ast.dump(arg)
 
     def extract_function_path(self, node):
         """
@@ -131,7 +117,7 @@ class StaticParser(ast.NodeVisitor):
                     break
 
         if function_name:
-            args = [self.get_arg_value(arg) for arg in node.args]
+            args = len(node.args)
             kwargs = [keyword.arg for keyword in node.keywords]
             function_info = {"name": function_name, "args": args, "kwargs": kwargs}
             

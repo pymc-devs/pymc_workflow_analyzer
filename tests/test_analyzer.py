@@ -7,16 +7,17 @@ def test_analyze_script():
     expected_repost = {
         "number_of_import_statements": 6,
         "imports": ["arviz", "matplotlib.pyplot", "numpy", "pandas", "pymc", "xarray"],
-        "model": [{"name": "Model", "args": [], "kwargs": []}],
+        "model": [{"name": "Model", "args": 0, "kwargs": []}],
         "distributions": [
-                {"name": "HalfCauchy", "args": ["sigma"], "kwargs": ["beta"]},
-                {"name": "Normal", "args": ["Intercept", 0], "kwargs": ["sigma"]},
-                {"name": "Normal", "args": ["slope", 0], "kwargs": ["sigma"]},
-                {"name": "Normal", "args": ["y"], "kwargs": ["mu", "sigma", "observed"]}
+                {"name": "HalfCauchy", "args": 1, "kwargs": ["beta"]},
+                {"name": "Normal", "args": 2, "kwargs": ["sigma"]},
+                {"name": "Normal", "args": 2, "kwargs": ["sigma"]},
+                {"name": "Normal", "args": 1, "kwargs": ["mu", "sigma", "observed"]}
         ],
-        "samplers": [{"name": "sample", "args": [3000], "kwargs": []}],
+        "samplers": [{"name": "sample", "args": 1, "kwargs": []}],
         "math": [],
-        "arviz": [{"name": "plot_trace", "args": ["idata"], "kwargs": ["figsize"]}]
+        "arviz": [{"name": "plot_trace", "args": 1, "kwargs": ["figsize"]}],
+        "pymc_experimental": []
     }
     analysis_report = static_analyzer(script_path)
     assert analysis_report == expected_repost
@@ -38,7 +39,8 @@ def test_import_statement():
         "distributions": [],
         "samplers": [],
         "math": [],
-        "arviz": []
+        "arviz": [],
+        "pymc_experimental": []
     }
     
     analysis_report = static_analyzer(script, source_type="string")
@@ -68,14 +70,15 @@ def test_function_calls():
         "distributions": [],
         "samplers": [],
         "math": [
-                {"name": "eq", "args": [1, 1], "kwargs": []},
-                {"name": "eq", "args": [2, 2], "kwargs": []},
-                {"name": "eq", "args": [3, 3], "kwargs": []},
-                {"name": "eq", "args": [4, 4], "kwargs": []},
-                {"name": "eq", "args": [5, 5], "kwargs": []},
-                {"name": "eq", "args": [6, 6], "kwargs": []}
+                {"name": "eq", "args": 2, "kwargs": []},
+                {"name": "eq", "args": 2, "kwargs": []},
+                {"name": "eq", "args": 2, "kwargs": []},
+                {"name": "eq", "args": 2, "kwargs": []},
+                {"name": "eq", "args": 2, "kwargs": []},
+                {"name": "eq", "args": 2, "kwargs": []}
         ],
-        "arviz": []
+        "arviz": [],
+        "pymc_experimental": []
     }
     
     analysis_report = static_analyzer(script, source_type="string")
