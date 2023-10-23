@@ -44,8 +44,9 @@ class StaticParser(ast.NodeVisitor):
         """
         for alias in node.names:
             name = alias.name
-            self.report["number_of_import_statements"] += 1
-            self.report["imports"].append(name)  # Storing the imported library name
+            if name not in self.report["imports"]:
+                self.report["number_of_import_statements"] += 1
+                self.report["imports"].append(name)  # Storing the imported library name
             if 'pymc' in name or 'arviz' in name:
                 self.alias_name.append(alias.asname or name)
                 
@@ -58,8 +59,9 @@ class StaticParser(ast.NodeVisitor):
         :param node: The ImportFrom node to visit.
         """
         module_name = node.module
-        self.report["number_of_import_statements"] += 1
-        self.report["imports"].append(module_name)  # Storing the base module name of the import
+        if module_name not in self.report["imports"]:
+            self.report["number_of_import_statements"] += 1
+            self.report["imports"].append(module_name)  # Storing the base module name of the import
         if module_name and ('pymc' in module_name or 'arviz' in module_name):
             for alias in node.names:
                 imported_as = alias.asname or alias.name
