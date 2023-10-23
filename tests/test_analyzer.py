@@ -25,8 +25,8 @@ def test_analyze_script():
 def test_import_statement():
     script = textwrap.dedent("""
         import pymc
-        from pymc import math
         import pymc as pm
+        from pymc import math
         from pymc import math as pymc_math
         from pymc.math import eq
         from pymc.math import eq as equals
@@ -38,6 +38,43 @@ def test_import_statement():
         "distributions": [],
         "samplers": [],
         "math": [],
+        "arviz": []
+    }
+    
+    analysis_report = static_analyzer(script, source_type="string")
+    assert analysis_report == expected_repost
+
+
+def test_function_calls():
+    script = textwrap.dedent("""
+        import pymc
+        import pymc as pm
+        from pymc import math
+        from pymc import math as pymc_math
+        from pymc.math import eq
+        from pymc.math import eq as equals
+
+        result = pymc.math.eq(1, 1)
+        result = pm.math.eq(2, 2)
+        result = math.eq(3, 3)
+        result = pymc_math.eq(4, 4)
+        result = eq(5, 5)
+        result = equals(6, 6)
+    """)
+    expected_repost = {
+        "number_of_import_statements": 2,
+        "imports": ["pymc", "pymc.math"],
+        "model": [],
+        "distributions": [],
+        "samplers": [],
+        "math": [
+                {"name": "eq", "args": [1, 1], "kwargs": []},
+                {"name": "eq", "args": [2, 2], "kwargs": []},
+                {"name": "eq", "args": [3, 3], "kwargs": []},
+                {"name": "eq", "args": [4, 4], "kwargs": []},
+                {"name": "eq", "args": [5, 5], "kwargs": []},
+                {"name": "eq", "args": [6, 6], "kwargs": []}
+        ],
         "arviz": []
     }
     

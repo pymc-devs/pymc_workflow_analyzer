@@ -44,6 +44,9 @@ class StaticParser(ast.NodeVisitor):
         """
         for alias in node.names:
             name = alias.name
+            asname = alias.asname if alias.asname else name
+            self.imported_names[asname] = name # Note: Store the alias as a key
+            
             if name not in self.report["imports"]:
                 self.report["number_of_import_statements"] += 1
                 self.report["imports"].append(name)  # Storing the imported library name
@@ -64,8 +67,11 @@ class StaticParser(ast.NodeVisitor):
             self.report["imports"].append(module_name)  # Storing the base module name of the import
         if module_name and ('pymc' in module_name or 'arviz' in module_name):
             for alias in node.names:
-                imported_as = alias.asname or alias.name
-                self.imported_names[imported_as] = module_name
+                name = alias.name
+                asname = alias.asname if alias.asname else name
+                # Construct a full path for the imported function/class
+                full_name = f"{module_name}.{name}" if module_name else name
+                self.imported_names[asname] = full_name
         self.generic_visit(node)
         
     def get_arg_value(self, arg):
@@ -82,25 +88,39 @@ class StaticParser(ast.NodeVisitor):
         else:
             return ast.dump(arg)
 
+    def extract_function_path(self, node):
+        """
+        Recursively extract the full function path from a nested AST node.
+
+        :param node: The AST node to extract the path from.
+        :return: A string representing the full path (e.g., "pymc.math.eq").
+        """
+        if isinstance(node, ast.Attribute):
+            return self.extract_function_path(node.value) + '.' + node.attr
+        elif isinstance(node, ast.Name):
+            return node.id
+        else:
+            return ''  # Non-handleable node
+        
     def visit_Call(self, node):
         """
         Visit a Call node and extract information about the PyMC function being called.
 
         :param node: The Call node to visit.
         """
-        function_name = None
-
-        # Extracting the function name
-        if isinstance(node.func, ast.Attribute):
-            if isinstance(node.func.value, ast.Name):
-                if node.func.value.id in self.alias_name:
-                    function_name = node.func.attr
-        elif isinstance(node.func, ast.Name):
-            function_id = node.func.id
-            if function_id in self.imported_names:
-                if 'pymc' in self.imported_names[function_id] or 'arviz' in self.imported_names[function_id]:
-                    function_name = function_id  # It's a PyMC function
+        full_function_path = self.extract_function_path(node.func)
+        # First, check if the function is called by its alias
+        if full_function_path in self.imported_names:
+            full_function_path = self.imported_names[full_function_path]
         
+        function_name = None
+        # Checking if the function path starts with a known PyMC alias or imported name
+        for alias, module in self.imported_names.items():
+            if full_function_path.startswith(alias):
+                if 'pymc' in module or 'arviz' in module:
+                    function_name = full_function_path.split('.')[-1]  # Extract the actual function name
+                    break
+
         if function_name:
             args = [self.get_arg_value(arg) for arg in node.args]
             kwargs = [keyword.arg for keyword in node.keywords]
