@@ -19,6 +19,14 @@ pymc_samplers = [
     "NormalProposal", "PoissonProposal", "UniformProposal", "CompoundStep", "Slice",
 ]
 
+pymc_experimentals = [
+    "MarginalModel", "ModelBuilder", "fit", "GenExtreme", "GeneralizedPoisson", "DiscreteMarkovChain",
+    "R2D2M2CP", "histogram_approximation", "bspline_interpolation", "prior_from_idata", 
+    "PytensorRepresentation", "PyMCStateSpace", "StandardFilter", "UnivariateFilter", "SteadyStateFilter",
+    "KalmanSmoother", "SingleTimeseriesFilter", "CholeskyFilter", "LinearGaussianStateSpace", "BayesianVARMAX"
+]
+
+
 class StaticParser(ast.NodeVisitor):
     """
     A class to parse a Python script and extract information about PyMC usage.
@@ -34,6 +42,7 @@ class StaticParser(ast.NodeVisitor):
             "samplers": [],
             "math": [],
             "arviz": [],
+            "pymc_experimental": [],
         }
         
     def visit_Import(self, node):
@@ -50,7 +59,7 @@ class StaticParser(ast.NodeVisitor):
             if name not in self.report["imports"]:
                 self.report["number_of_import_statements"] += 1
                 self.report["imports"].append(name)  # Storing the imported library name
-            if 'pymc' in name or 'arviz' in name:
+            if 'pymc' in name or 'arviz' in name or 'pymc_experimental' in name:
                 self.alias_name.append(alias.asname or name)
                 
         self.generic_visit(node)
@@ -65,7 +74,7 @@ class StaticParser(ast.NodeVisitor):
         if module_name not in self.report["imports"]:
             self.report["number_of_import_statements"] += 1
             self.report["imports"].append(module_name)  # Storing the base module name of the import
-        if module_name and ('pymc' in module_name or 'arviz' in module_name):
+        if module_name and ('pymc' in module_name or 'arviz' in module_name or 'pymc_experimental' in module_name):
             for alias in node.names:
                 name = alias.name
                 asname = alias.asname if alias.asname else name
@@ -117,7 +126,7 @@ class StaticParser(ast.NodeVisitor):
         # Checking if the function path starts with a known PyMC alias or imported name
         for alias, module in self.imported_names.items():
             if full_function_path.startswith(alias):
-                if 'pymc' in module or 'arviz' in module:
+                if 'pymc' in module or 'arviz' in module or 'pymc_experimental' in module:
                     function_name = full_function_path.split('.')[-1]  # Extract the actual function name
                     break
 
@@ -136,6 +145,8 @@ class StaticParser(ast.NodeVisitor):
                 self.report["math"].append(function_info)
             elif function_name in arviz_plots:
                 self.report["arviz"].append(function_info)
+            elif function_name in pymc_experimentals:
+                self.report["pymc_experimental"].append(function_info)
 
         # continue the visit to other nodes in the syntax tree
         self.generic_visit(node)
