@@ -19,7 +19,7 @@ def test_analyze_script():
         "arviz": [{"name": "plot_trace", "args": 1, "kwargs": ["figsize"]}],
         "pymc_experimental": []
     }
-    analysis_report = static_analyzer(script_path)
+    analysis_report = static_analyzer(script_path, source_type="file")
     assert analysis_report == expected_repost
 
 
@@ -43,7 +43,7 @@ def test_import_statement():
         "pymc_experimental": []
     }
     
-    analysis_report = static_analyzer(script, source_type="string")
+    analysis_report = static_analyzer(script, source_type="code")
     assert analysis_report == expected_repost
 
 
@@ -81,5 +81,5 @@ def test_function_calls():
         "pymc_experimental": []
     }
     
-    analysis_report = static_analyzer(script, source_type="string")
+    analysis_report = static_analyzer(script, source_type="code")
     assert analysis_report == expected_repost

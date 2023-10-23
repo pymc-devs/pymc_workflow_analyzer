@@ -10,11 +10,46 @@ def main():
     :return: None.
     """
     parser = argparse.ArgumentParser(description="Analyze a PyMC Workflow")
-    parser.add_argument("filepath", help="Path to the Python script to analyze")
-    parser.add_argument("--output", help="Path to the file to save the report to")
+    parser.add_argument(
+        "input", 
+        nargs="?",  # This makes the argument optional
+        help="Path to the Python script or URL to analyze"
+    )
+    parser.add_argument(
+        "--file", 
+        action="store_true", 
+        help="Indicate that the input is a file path (default)"
+    )
+    parser.add_argument(
+        "--url", 
+        action="store_true", 
+        help="Indicate that the input is a URL"
+    )
+    parser.add_argument(
+        "--code", 
+        action="store_true", 
+        help="Indicate that the input is a raw string"
+    )
+    parser.add_argument(
+        "--output", 
+        help="Path to the file to save the report to"
+    )
+
     args = parser.parse_args()
 
-    analysis_data = static_analyzer(args.filepath)
+    # Determine the type of input based on the flags provided
+    if args.url:
+        input_type = "url"
+    elif args.code:
+        input_type = "code"
+    else:  # Default to file if no specific flag is provided
+        input_type = "file"
+
+    # If no input is provided, prompt the user to provide one
+    if args.input is None:
+        parser.error("No input provided. Please provide a file path, URL, or a raw string.")
+
+    analysis_data = static_analyzer(args.input, source_type=input_type)
     report_content = generate_static_report(analysis_data)
 
     print(report_content)
