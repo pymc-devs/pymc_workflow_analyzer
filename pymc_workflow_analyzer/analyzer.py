@@ -1,9 +1,12 @@
 import ast
-import sys
 import json
 import requests
 import nbformat
 from .parser import StaticParser
+
+class AnalyzerError(Exception):
+    """Custom exception for errors during analysis."""
+    pass
 
 def fetch_content_from_url(url):
     """
@@ -22,19 +25,17 @@ def fetch_content_from_url(url):
 
         # Check if the content seems to be HTML
         if content.strip().startswith('<!DOCTYPE html>') or '<html' in content:
-            print("Error: The URL seems to be pointing to an HTML page, not a raw Python script or Jupyter notebook. "
+            raise AnalyzerError("Error: The URL seems to be pointing to an HTML page, not a raw Python script or Jupyter notebook. "
                   "Please provide a URL pointing to the raw content. "
                   "For files on GitHub, you can get the raw URL by clicking on the 'Raw' button.")
-            sys.exit(1)
         else:
             # Check if the content is JSON and not what we expect
             try:
                 content_json = json.loads(content)
                 if 'payload' in content_json or 'items' in content_json:  # or other checks to identify it's not a raw code file
-                    print("Error: The URL seems to be pointing to a JSON API or a structured data endpoint, not a raw Python script or Jupyter notebook. "
+                    raise AnalyzerError("Error: The URL seems to be pointing to a JSON API or a structured data endpoint, not a raw Python script or Jupyter notebook. "
                           "Please provide a URL pointing to the raw content. "
                           "For files on GitHub, you can get the raw URL by clicking on the 'Raw' button.")
-                    sys.exit(1)
             except json.JSONDecodeError:
                 # It's not JSON, so it's likely the raw content of a file, proceed accordingly
                 pass
@@ -42,8 +43,7 @@ def fetch_content_from_url(url):
             return content
 
     except requests.RequestException as e:
-        print(f"Error: Unable to retrieve content from URL.\n{str(e)}")
-        sys.exit(1)
+        raise AnalyzerError(f"Error: Unable to retrieve content from URL.\n{str(e)}")
 
 def extract_code_from_notebook(notebook_content):
     """
@@ -61,17 +61,14 @@ def extract_code_from_notebook(notebook_content):
                 code += cell.source + "\n"
         return code
     except json.JSONDecodeError:
-        print("Error: The provided content does not appear to be in JSON format. "
+        raise AnalyzerError("Error: The provided content does not appear to be in JSON format. "
               "If you're providing a URL, please ensure it's a direct link to the raw file content, "
               "such as the 'Raw' content view from a GitHub repository or Gist.")
-        sys.exit(1)
     except nbformat.reader.NotJSONError:
-        print("Error: The provided content does not appear to be a valid Jupyter notebook. "
+        raise AnalyzerError("Error: The provided content does not appear to be a valid Jupyter notebook. "
               "Please ensure the file is a proper '.ipynb' file and the URL is pointing to its raw content.")
-        sys.exit(1)
     except Exception as e:
-        print(f"Error: An unexpected error occurred while parsing the notebook content.\n{str(e)}")
-        sys.exit(1)
+        raise AnalyzerError(f"Error: An unexpected error occurred while parsing the notebook content.\n{str(e)}")
 
 def static_analyzer(input_source, source_type="file"):
     """
@@ -101,20 +98,15 @@ def static_analyzer(input_source, source_type="file"):
                 # Assuming it's a Python script if it's not a notebook
                 tree = ast.parse(content)
         else:
-            print("Error: The source_type must be 'file', 'string', or 'url'.")
-            sys.exit(1)
+            raise AnalyzerError("Error: The source_type must be 'file', 'string', or 'url'.")
     except FileNotFoundError:
-        print(f"Error: The file {input_source} does not exist.")
-        sys.exit(1)
+        raise AnalyzerError(f"Error: The file {input_source} does not exist.")
     except PermissionError:
-        print(f"Error: You do not have the permission to read the file {input_source}.")
-        sys.exit(1)
+        raise AnalyzerError(f"Error: You do not have the permission to read the file {input_source}.")
     except SyntaxError as e:
-        print(f"Error: The script contains syntax errors.\nPlease provide a valid Python script or URL\n{str(e)}")
-        sys.exit(1)
+        raise AnalyzerError(f"Error: The script contains syntax errors.\nPlease provide a valid Python script or URL\n{str(e)}")
     except Exception as e:
-        print(f"An unexpected error occurred: {str(e)}")
-        sys.exit(1)
+        raise AnalyzerError(f"An unexpected error occurred: {str(e)}")
 
     parser.visit(tree)
     return parser.get_report()

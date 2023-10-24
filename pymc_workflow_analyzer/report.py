@@ -1,5 +1,4 @@
 import json
-import sys
 
 def format_list(key, value):
     """
@@ -73,5 +72,4 @@ def save_report(report_content, filepath="report.txt"):
         with open(filepath, "w") as report_file:
             report_file.write(report_content)
     except Exception as e:
-        print(f"Error: An unexpected error occurred while saving the report.\n{str(e)}")
-        sys.exit(1)
+        raise Exception(f"Error: An unexpected error occurred while saving the report.\n{str(e)}")
