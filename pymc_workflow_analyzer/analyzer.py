@@ -104,7 +104,7 @@ def static_analyzer(input_source, source_type="file"):
     except PermissionError:
         raise AnalyzerError(f"Error: You do not have the permission to read the file {input_source}.")
     except SyntaxError as e:
-        raise AnalyzerError(f"Error: The script contains syntax errors.\nPlease provide a valid Python script or URL\n{str(e)}")
+        raise AnalyzerError(f"Error: The script contains syntax errors.\nPlease provide a valid Python script or URL.\n{str(e)}")
     except Exception as e:
         raise AnalyzerError(f"An unexpected error occurred: {str(e)}")
 
