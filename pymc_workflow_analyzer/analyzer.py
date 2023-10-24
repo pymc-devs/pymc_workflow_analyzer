@@ -58,7 +58,12 @@ def extract_code_from_notebook(notebook_content):
         code = ""
         for cell in notebook.cells:
             if cell.cell_type == "code":
-                code += cell.source + "\n"
+                # Split the cell content into lines
+                lines = cell.source.split('\n')
+                # Filter out lines starting with '!' or '%' (shell or magic commands)
+                lines = [line for line in lines if not line.startswith(('!', '%'))]
+                # Rejoin the filtered lines and add to the code
+                code += '\n'.join(lines) + "\n"
         return code
     except json.JSONDecodeError:
         raise AnalyzerError("Error: The provided content does not appear to be in JSON format. "
