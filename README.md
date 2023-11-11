@@ -3,8 +3,7 @@
 The PyMC Workflow Analyzer is a tool designed to statically analyze Python scripts or Jupyter notebooks to identify PyMC workflows. 
 The goal is to provide data back to the deveopers so they understand library usage and can determine what is most useful to users.
 It can process Python files, Python code as a string, or Jupyter notebooks from a local system or a URL.
-See [Discourse](See https://discourse.pymc.io/t/extended-event-gathering-pymc-usage-information/13064 for the higher level discussion
-) for a higher level discussion
+See [Discourse](See https://discourse.pymc.io/t/extended-event-gathering-pymc-usage-information/13064) for the higher level discussion
 
 ## Features
 
